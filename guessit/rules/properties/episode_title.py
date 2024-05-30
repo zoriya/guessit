@@ -7,6 +7,7 @@ from collections import defaultdict
 from copy import copy
 
 from rebulk import Rebulk, Rule, AppendMatch, RemoveMatch, RenameMatch, POST_PROCESS
+from rebulk.rebulk import Matches
 
 from ..common import seps, title_seps
 from ..common.formatters import cleanup
@@ -274,6 +275,9 @@ class Filepart2EpisodeTitle(Rule):
 
     If BBBB contains season and episode and AAA contains a hole
     then title is to be found in AAAA.
+
+    If BBBB contais the episode and no season is found (absolute numbering)
+    then title is to be found in AAAA.
     """
     consequence = AppendMatch('title')
 
@@ -292,7 +296,7 @@ class Filepart2EpisodeTitle(Rule):
         if episode_number:
             season = (matches.range(directory.start, directory.end, lambda match: match.name == 'season', 0) or
                       matches.range(filename.start, filename.end, lambda match: match.name == 'season', 0))
-            if season:
+            if season or not matches.named("season"):
                 hole = matches.holes(directory.start, directory.end,
                                      ignore=or_(lambda match: 'weak-episode' in match.tags, TitleBaseRule.is_ignored),
                                      formatter=cleanup, seps=title_seps,
